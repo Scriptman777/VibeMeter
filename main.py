@@ -9,7 +9,7 @@ server = 'irc.chat.twitch.tv'
 port = 6667
 nickname = 'VibeMeter'
 token = 'oauth:mg31dpbx7ggtbcde3cvxaqbe7zufpc'
-channel = '#tarik'
+channel = '#corceon'
 
 sock = socket.socket()
 sock.connect((server, port))
@@ -18,17 +18,17 @@ sock.send(f"NICK {nickname}\r\n".encode('utf-8'))
 sock.send(f"JOIN {channel}\r\n".encode('utf-8'))
 
 ANALYZER = SentimentIntensityAnalyzer()
-overall_sentiment = {'compound': 0, 'neg': 0.1, 'neu': 0, 'pos': 0.1, 'total': 0}
+MAGICAL_NUMBER = 130
+overall_sentiment = {'compound': 0, 'neg': 0.1, 'neu': 0, 'pos': 0.1, 'total': 0.0}
 
 # Init graph
-fig, axs = plt.subplots(2,1,figsize=(6, 10))
+fig, axs = plt.subplots(1,1,figsize=(3, 5),facecolor='lime')
 fig.tight_layout(pad=3.0)
-axs[0].bar(['Positive', 'Negative', 'Neutral'], [0, 0, 0], color=['green', 'red', 'grey'])
-axs[0].set_title('VibeMeter')
-axs[0].set_ylabel('Relative vibe')
-axs[1].pie([0.5, 0.5], labels=['Positive', 'Negative'], colors=['green', 'red'])
-
-
+axs.bar(['Vibe'], [0], color=['orange'])
+axs.set_facecolor('lime')
+axs.set_title('VibeMeter')
+axs.set_ylabel('Relative vibe')
+axs.set_ylim([0, MAGICAL_NUMBER])
 
 def udpate_graph(arg):
     resp = sock.recv(2048).decode('utf-8')
@@ -51,11 +51,25 @@ def udpate_graph(arg):
             overall_sentiment['total'] = overall_sentiment['neg'] + overall_sentiment['pos']
             print(overall_sentiment)
 
-    axs[0].cla()
-    axs[1].cla()
-    axs[0].bar(['Positive', 'Negative'], [overall_sentiment['pos']/overall_sentiment['total'], overall_sentiment['neg']/overall_sentiment['total']], color=['green', 'red'])
-    axs[1].pie([overall_sentiment['pos']/overall_sentiment['total'], overall_sentiment['neg']/overall_sentiment['total']], labels=['Positive', 'Negative'], colors=['green', 'red'])
-    axs[0].set_title('VibeMeter')
+    axs.cla()
+    current_vibe = (overall_sentiment['pos']/overall_sentiment['total'])*MAGICAL_NUMBER
+    vibemeter = axs.bar(['Vibe'], current_vibe, color=['orange'])
+    axs.set_title('VibeMeter')
+    axs.set_ylabel('Relative vibe')
+    axs.set_facecolor('lime')
+    axs.set_ylim([0, MAGICAL_NUMBER])
+
+    for p in vibemeter:
+        width = p.get_width()
+        height = p.get_height()
+        x, y = p.get_xy()
+        plt.text(x + width / 2,
+                 y + height * 1.01,
+                 '{0:.2f}'.format(current_vibe) + '%',
+                 ha='center',
+                 weight='bold')
+
+
 
 def main():
     ani = FuncAnimation(fig, udpate_graph, interval=300)
